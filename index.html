@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raid Consumables Report · Warcraft Logs → Gold</title>
+<style>
+  :root{
+    --bg:#141019; --bg2:#1c1626; --panel:#221a2e; --line:#3a2d4d;
+    --ink:#e8e2f2; --ink-dim:#9d92b3; --ink-faint:#6b6180;
+    --gold:#f8c53a; --silver:#c9c9d4; --copper:#c1794a;
+    --accent:#8e6ff0; --fel:#7dd651; --danger:#e06767;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{font-size:16px}
+  body{
+    background:
+      radial-gradient(1200px 500px at 80% -10%, rgba(142,111,240,.14), transparent 60%),
+      radial-gradient(900px 400px at 0% 100%, rgba(125,214,81,.06), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height:1.5; min-height:100vh; padding:2.2rem 1rem 4rem;
+  }
+  .wrap{max-width:960px; margin:0 auto}
+  header{margin-bottom:1.6rem}
+  .eyebrow{
+    font-family:Georgia, "Times New Roman", serif; letter-spacing:.28em; text-transform:uppercase;
+    font-size:.68rem; color:var(--gold); margin-bottom:.4rem;
+  }
+  h1{
+    font-family:Georgia, "Times New Roman", serif; font-weight:600; font-size:1.9rem;
+    letter-spacing:.01em;
+  }
+  h1 .thin{color:var(--ink-dim); font-weight:400}
+  .sub{color:var(--ink-dim); font-size:.9rem; margin-top:.35rem; max-width:60ch}
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:1.15rem 1.25rem; margin-bottom:1rem;
+  }
+  label{display:block; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:.3rem}
+  input[type=text], input[type=password]{
+    width:100%; background:var(--bg2); border:1px solid var(--line); border-radius:6px;
+    color:var(--ink); padding:.55rem .7rem; font-size:.95rem; font-family:inherit;
+  }
+  input:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:.9rem; margin-bottom:.9rem}
+  @media (max-width:640px){.row{grid-template-columns:1fr}}
+  .btnbar{display:flex; gap:.7rem; align-items:center; flex-wrap:wrap}
+  button.primary{
+    background:linear-gradient(180deg,#a184ff,#7c5ce0); color:#170f2b; border:0; border-radius:7px;
+    font-weight:700; font-size:.95rem; padding:.6rem 1.4rem; cursor:pointer; letter-spacing:.02em;
+  }
+  button.primary:hover{filter:brightness(1.08)}
+  button.primary:disabled{opacity:.5; cursor:wait}
+  button.ghost{
+    background:transparent; border:1px solid var(--line); color:var(--ink-dim); border-radius:7px;
+    padding:.55rem 1rem; font-size:.85rem; cursor:pointer;
+  }
+  button.ghost:hover{color:var(--ink); border-color:var(--accent)}
+  button:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  .hint{font-size:.78rem; color:var(--ink-faint)}
+
+  #status{font-family:ui-monospace, "Consolas", monospace; font-size:.78rem; color:var(--ink-dim);
+    white-space:pre-wrap; max-height:9rem; overflow-y:auto; margin-top:.8rem; display:none;
+    border-top:1px dashed var(--line); padding-top:.6rem}
+
+  /* results */
+  #results{display:none}
+  .meta{display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; align-items:baseline; margin:.2rem 0 1rem}
+  .meta .gen{font-size:.8rem; color:var(--ink-dim)}
+  .meta a{color:var(--accent)}
+  .bigtotal{font-family:Georgia, serif; font-size:1.35rem}
+  table{width:100%; border-collapse:collapse; font-size:.92rem}
+  th{
+    text-align:left; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-faint); padding:.45rem .6rem; border-bottom:1px solid var(--line);
+  }
+  td{padding:.5rem .6rem; border-bottom:1px solid rgba(58,45,77,.5); vertical-align:top}
+  tr:hover td{background:rgba(142,111,240,.05)}
+  td.num, th.num{text-align:right; font-variant-numeric:tabular-nums; font-family:ui-monospace,"Consolas",monospace; white-space:nowrap}
+  .rank{color:var(--ink-faint); width:2.4rem}
+  .g{color:var(--gold)} .s{color:var(--silver)} .c{color:var(--copper)}
+  .bar{height:4px; border-radius:2px; background:linear-gradient(90deg,var(--gold),#9c7413); margin-top:.35rem; min-width:2px}
+  .playercell{cursor:pointer}
+  .playercell .caret{color:var(--ink-faint); font-size:.75rem; margin-left:.3rem}
+  .detail{display:none; font-size:.8rem; color:var(--ink-dim); padding:.1rem .6rem .6rem 3rem}
+  .detail.open{display:table-row}
+  .detail td{border-bottom:1px solid rgba(58,45,77,.5)}
+  h2{font-family:Georgia, serif; font-weight:600; font-size:1.15rem; margin:1.6rem 0 .6rem; color:var(--ink)}
+  .share{
+    border:1px solid var(--line); border-radius:8px; padding:.9rem 1rem; margin:.4rem 0 1.2rem;
+    background:linear-gradient(180deg, rgba(248,197,58,.05), transparent);
+  }
+  .share-head{font-size:.68rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); margin-bottom:.6rem}
+  .share input{background:var(--bg2); border:1px solid var(--line); border-radius:6px; color:var(--ink); padding:.5rem .7rem; font-size:.85rem}
+  .ok{color:var(--fel)}
+
+  details.prices summary{cursor:pointer; color:var(--ink-dim); font-size:.85rem; user-select:none}
+  details.prices summary:hover{color:var(--ink)}
+  .price-grid{margin-top:.8rem}
+  .price-grid input[type=number]{
+    width:6.2rem; background:var(--bg2); border:1px solid var(--line); border-radius:5px;
+    color:var(--gold); padding:.25rem .45rem; font-family:ui-monospace,monospace; font-size:.85rem; text-align:right;
+  }
+  .asof{font-size:.75rem; color:var(--ink-faint); margin:.5rem 0}
+  .warn{color:var(--danger); font-size:.8rem}
+  footer{margin-top:2.5rem; font-size:.75rem; color:var(--ink-faint)}
+  @media (prefers-reduced-motion:no-preference){
+    #results{animation:fade .35s ease}
+    @keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div style="display:flex; align-items:center; gap:.7rem; margin-bottom:.5rem">
+    <img id="hdrlogo" alt="Almost Awesome" style="height:34px" >
+    <div class="eyebrow" style="margin:0">Almost Awesome · Thunderstrike Alliance</div>
+  </div>
+  <h1>Raid Consumables Report</h1>
+  <p class="sub">Paste a Warcraft Logs report and analyze it: flasks, elixirs, potions, Flame Caps, Nightmare Seeds, runes, bombs &amp; sapper charges, and scrolls (Agility&nbsp;V / Strength&nbsp;V) are counted per player and priced with TSM data.</p>
+</header>
+
+<div class="panel">
+  <div class="row" style="grid-template-columns:230px 1fr 1fr">
+    <div>
+      <label for="gamever">Game version</label>
+      <select id="gamever" style="width:100%; background:var(--bg2); border:1px solid var(--line); border-radius:6px; color:var(--ink); padding:.55rem .7rem; font-size:.95rem">
+        <option value="anniversary">WoW Classic Anniversary</option>
+        <option value="era">Classic Era</option>
+      </select>
+    </div>
+    <div>
+      <label for="logurl">Warcraft Logs report (URL or code)</label>
+      <input type="text" id="logurl" placeholder="https://classic.warcraftlogs.com/reports/…" value="">
+    </div>
+    <div>
+      <label for="apikey">WCL API key (v1 client)</label>
+      <input type="password" id="apikey" value="" autocomplete="off">
+      <p class="hint" style="margin-top:.35rem">Get your key: scroll down on <a href="https://classic.warcraftlogs.com/profile" target="_blank" rel="noopener" style="color:var(--accent)">classic.warcraftlogs.com/profile</a>, enter <code>consumes</code> as "V1 Client Name" and hit Set, then copy the "V1 Client Key" here.<br>🔒 Key and webhook URL are stored only in your browser (localStorage) and sent exclusively to warcraftlogs.com / discord.com.</p>
+    </div>
+  </div>
+  <div class="btnbar">
+    <button class="primary" id="run">Analyze log</button>
+    <span class="hint">Open this file locally in your browser — requests go directly to Warcraft Logs.</span>
+  </div>
+  <div id="status"></div>
+</div>
+
+<div class="panel">
+  <details class="prices">
+    <summary>Show / adjust prices (TSM Classic Anniversary EU market value)</summary>
+    <p class="asof" id="asof"></p>
+    <div class="btnbar" style="margin:.4rem 0 .6rem">
+      <button class="primary" id="updateprices" type="button">Update TSM prices now</button>
+      <input type="text" id="tsmurl" style="flex:1; min-width:260px"
+        value="https://public-data.tradeskillmaster.com/classic/eu-fresh/realm/thunderstrike-alliance/items.csv"
+        aria-label="TSM CSV source">
+    </div>
+    <p class="hint" id="pricehint">Fetches the current <code>items.csv</code> from public-data (via a CORS proxy if needed). Fallback if every route is blocked: load the file manually
+      <input type="file" id="csvfile" accept=".csv" style="margin-left:.5rem">
+    </p>
+    <div class="price-grid"><table id="pricetable"></table></div>
+  </details>
+</div>
+
+<div class="panel">
+  <details class="prices">
+    <summary>Custom consumables (advanced)</summary>
+    <p class="hint" style="margin:.5rem 0">Track anything not in the built-in list — just like the built-ins, detection is automatic per log: if the report contains a <b>buff with this exact name</b>, usage is estimated from buff uptime (names starting with "Flask" count as 120&nbsp;min &amp; death-persistent, "Scroll" as 30&nbsp;min, everything else as 60&nbsp;min); otherwise <b>casts with this exact ability name</b> are counted. Use the name exactly as shown in Warcraft Logs. <b>TSM item ID</b> = the number in the item's Wowhead URL (used for pricing — hit "Update TSM prices now" after adding).</p>
+    <div class="row" style="margin-bottom:.5rem">
+      <div><label for="c_name">Display name</label><input type="text" id="c_name" placeholder="e.g. Major Dreamless Sleep Potion"></div>
+      <div><label for="c_itemid">TSM item ID</label><input type="text" id="c_itemid" placeholder="e.g. 20002"></div>
+    </div>
+    <div class="btnbar">
+      <button class="primary" id="c_add" type="button">Add consumable</button>
+      <span class="hint" id="c_msg"></span>
+    </div>
+    <div class="price-grid"><table id="customlist"></table></div>
+  </details>
+</div>
+
+<div id="results" class="panel">
+  <div class="meta">
+    <div>
+      <div class="bigtotal">Total: <span id="grandtotal"></span></div>
+      <div class="gen" id="reportline"></div>
+    </div>
+    <div style="text-align:right">
+      <div class="gen" id="generated"></div>
+    </div>
+  </div>
+
+  <div class="share" id="sharebox">
+    <div class="share-head">Share &amp; Export</div>
+    <div class="btnbar">
+      <button class="ghost" id="exportcsv">⬇ Export CSV</button>
+      <button class="ghost" id="copymd">⧉ Copy Discord markdown</button>
+    </div>
+    <div class="btnbar" style="margin-top:.6rem">
+      <input type="password" id="webhook" placeholder="Discord webhook URL (optional) — https://discord.com/api/webhooks/…" style="flex:1; min-width:260px">
+      <button class="primary" id="senddiscord">➤ Send to Discord</button>
+    </div>
+    <div class="hint" id="sharestatus" style="margin-top:.4rem"></div>
+  </div>
+
+  <h2>Spend per player</h2>
+  <table id="board"><thead><tr>
+    <th class="rank">#</th><th>Player</th><th class="num">Uses</th><th class="num">Spend</th>
+  </tr></thead><tbody></tbody></table>
+
+  <h2>Breakdown per consumable</h2>
+  <table id="itemtable"><thead><tr>
+    <th>Item</th><th class="num">Unit price</th><th class="num">Uses</th><th class="num">Total</th>
+  </tr></thead><tbody></tbody></table>
+</div>
+
+<footer>
+  Counting method: short buffs &amp; potions via cast events (exact); flasks (120&nbsp;min, persist through death — wipes never double-count), elixirs (60&nbsp;min) and scrolls (30&nbsp;min) are estimated from buff uptime bands against fight boundaries — estimates, since logs only see combat time. Drums: cost per use = item price / 50 charges. Mana Emeralds &amp; Healthstones count as 0&nbsp;g (conjured). <span id="version"></span>
+</footer>
+</div>
+
+<script>
+"use strict";
+const PRICES_ASOF = "2026-07-15T20:11:40Z (Realm Thunderstrike-Alliance)";
+const PRICES = {"22854": 762397, "22866": 767859, "22853": 591502, "22851": 611575, "22861": 1118455, "13512": 610904, "13511": 587681, "22831": 49591, "28103": 21450, "22825": 9556, "13452": 36348, "22824": 21219, "22835": 40067, "13454": 45303, "22833": 61325, "22827": 44018, "32067": 44383, "32062": 20207, "22840": 93657, "32063": 16513, "22834": 41704, "32068": 12821, "29529": 92904, "29528": 41096, "22838": 148516, "22839": 149914, "22837": 58854, "22828": 102433, "22832": 17645, "22829": 6730, "22849": 21063, "22788": 39232, "22797": 50088, "22795": 321, "23736": 20847, "23827": 130134, "10646": 61643, "20520": 78353, "21991": 3716, "27498": 99273, "27503": 88574}; // itemId -> copper (marketValue)
+
+// duration in minutes for buff-estimation; charges divide the item price per use
+const TRACKED = [
+  // Flasks (2h, persist through death)
+  {item:"Flask of Relentless Assault", id:22854, m:"buff", dur:120, persist:true, names:["Flask of Relentless Assault","Relentless Assault"]},
+  {item:"Flask of Pure Death",         id:22866, m:"buff", dur:120, persist:true, names:["Flask of Pure Death","Pure Death"]},
+  {item:"Flask of Mighty Restoration", id:22853, m:"buff", dur:120, persist:true, names:["Flask of Mighty Restoration","Mighty Restoration"]},
+  {item:"Flask of Fortification",      id:22851, m:"buff", dur:120, persist:true, names:["Flask of Fortification","Fortification"]},
+  {item:"Flask of Blinding Light",     id:22861, m:"buff", dur:120, persist:true, names:["Flask of Blinding Light","Blinding Light"]},
+  {item:"Flask of Chromatic Wonder",   id:33208, m:"buff", dur:120, persist:true, names:["Flask of Chromatic Wonder","Chromatic Wonder"]},
+  {item:"Flask of Supreme Power",      id:13512, m:"buff", dur:120, persist:true, names:["Flask of Supreme Power","Supreme Power"]},
+  {item:"Flask of Distilled Wisdom",   id:13511, m:"buff", dur:120, persist:true, names:["Flask of Distilled Wisdom","Distilled Wisdom"]},
+  // Battle elixirs (1h)
+  {item:"Elixir of Major Agility",     id:22831, m:"buff", dur:60, names:["Elixir of Major Agility","Major Agility"]},
+  {item:"Adept's Elixir",              id:28103, m:"buff", dur:60, names:["Adept's Elixir"]},
+  {item:"Elixir of Healing Power",     id:22825, m:"buff", dur:60, names:["Elixir of Healing Power","Healing Power"]},
+  {item:"Elixir of the Mongoose",      id:13452, m:"buff", dur:60, names:["Elixir of the Mongoose","Mongoose"]},
+  {item:"Elixir of Major Strength",    id:22824, m:"buff", dur:60, names:["Elixir of Major Strength","Major Strength"]},
+  {item:"Elixir of Major Shadow Power",id:22835, m:"buff", dur:60, names:["Elixir of Major Shadow Power","Major Shadow Power"]},
+  {item:"Greater Arcane Elixir",       id:13454, m:"buff", dur:60, names:["Greater Arcane Elixir"]},
+  {item:"Elixir of Major Firepower",   id:22833, m:"buff", dur:60, names:["Elixir of Major Firepower","Major Firepower"]},
+  {item:"Elixir of Major Frost Power", id:22827, m:"buff", dur:60, names:["Elixir of Major Frost Power","Major Frost Power"]},
+  // Guardian elixirs (1h)
+  {item:"Elixir of Draenic Wisdom",    id:32067, m:"buff", dur:60, names:["Elixir of Draenic Wisdom","Draenic Wisdom"]},
+  {item:"Elixir of Major Fortitude",   id:32062, m:"buff", dur:60, names:["Elixir of Major Fortitude","Major Fortitude"]},
+  {item:"Elixir of Major Mageblood",   id:22840, m:"buff", dur:60, names:["Elixir of Major Mageblood","Major Mageblood"]},
+  {item:"Earthen Elixir",              id:32063, m:"buff", dur:60, names:["Earthen Elixir"]},
+  {item:"Elixir of Major Defense",     id:22834, m:"buff", dur:60, names:["Elixir of Major Defense","Major Defense"]},
+  {item:"Elixir of Ironskin",          id:32068, m:"buff", dur:60, names:["Elixir of Ironskin","Ironskin"]},
+  // Scrolls (30 min) — known WCL buff spell IDs as fallback
+  {item:"Scroll of Agility V",  id:27498, m:"buff", dur:30, names:["Scroll of Agility V"], guids:[33077]},
+  {item:"Scroll of Strength V", id:27503, m:"buff", dur:30, names:["Scroll of Strength V"], guids:[33082]},
+  // Cast-based (use spell IDs)
+  {item:"Drums of Battle", id:29529, m:"cast", spells:[35476], charges:50},
+  {item:"Drums of War",    id:29528, m:"cast", spells:[35475], charges:50},
+  {item:"Haste Potion",         id:22838, m:"cast", spells:[28507]},
+  {item:"Destruction Potion",   id:22839, m:"cast", spells:[28508]},
+  {item:"Heroic Potion",        id:22837, m:"cast", spells:[28506]},
+  {item:"Insane Strength Potion",id:22828, m:"cast", spells:[28494]},
+  {item:"Super Mana Potion",    id:22832, m:"cast", spells:[28499]},
+  {item:"Super Healing Potion", id:22829, m:"cast", spells:[28495]},
+  {item:"Ironshield Potion",    id:22849, m:"cast", spells:[28515]},
+  {item:"Flame Cap",            id:22788, m:"cast", spells:[28714]},
+  {item:"Nightmare Seed",       id:22797, m:"cast", spells:[28726]},
+  {item:"Fel Blossom",          id:22795, m:"cast", spells:[28527]},
+  {item:"Fel Iron Bomb",        id:23736, m:"cast", spells:[30216]},
+  {item:"Super Sapper Charge",  id:23827, m:"cast", spells:[30486]},
+  {item:"Goblin Sapper Charge", id:10646, m:"cast", spells:[13241]},
+  {item:"Dark Rune / Demonic Rune", id:20520, m:"cast", spells:[27869,16666]},
+  {item:"Mana Emerald",         id:22044, m:"cast", spells:[27103], free:true},
+  {item:"Master Healthstone",   id:22105, m:"cast", spells:[27239], free:true},
+  {item:"Heavy Netherweave Bandage", id:21991, m:"cast", spells:[27031]},
+];
+
+let CUSTOM=[];
+try{ CUSTOM = JSON.parse(localStorage.getItem("aa_custom")||"[]"); }catch(_){ CUSTOM=[]; }
+function saveCustom(){ try{ localStorage.setItem("aa_custom", JSON.stringify(CUSTOM)); }catch(_){} }
+function customTracked(){
+  return CUSTOM.map(c => {
+    if(c.m==="cast") return {item:c.item, id:c.id, m:"cast", spells:c.spells, custom:true};        // legacy
+    if(c.m==="buff") return {item:c.item, id:c.id, m:"buff", dur:c.dur, persist:!!c.persist, names:[c.buffName], custom:true}; // legacy
+    return {item:c.item, id:c.id, m:"auto", custom:true};
+  });
+}
+function allTracked(){ return TRACKED.concat(customTracked()); }
+
+const priceGold = {}; // itemId -> gold (editable)
+for (const t of allTracked()) priceGold[t.id] = t.free ? 0 : (PRICES[t.id]||0)/10000;
+
+// ---------- price panel ----------
+function renderPrices(){
+  const tb = document.getElementById("pricetable");
+  tb.innerHTML = "<tr><th>Item</th><th class='num'>Price (g)</th><th>Item</th><th class='num'>Price (g)</th></tr>";
+  const LIST = allTracked();
+  for (let i=0; i<LIST.length; i+=2){
+    const tr = document.createElement("tr");
+    for (const t of [LIST[i], LIST[i+1]].filter(Boolean)){
+      const td1=document.createElement("td"); td1.textContent = t.item + (t.charges?` (÷${t.charges})`:"") + (t.free?" (conjured)":"") + (t.custom?" ★":"");
+      const td2=document.createElement("td"); td2.className="num";
+      const inp=document.createElement("input"); inp.type="number"; inp.step="0.01"; inp.min="0";
+      inp.value = priceGold[t.id].toFixed(2);
+      inp.addEventListener("change", ()=>{ priceGold[t.id]=parseFloat(inp.value)||0; if(lastResult) render(lastResult); });
+      td2.appendChild(inp); tr.appendChild(td1); tr.appendChild(td2);
+    }
+    tb.appendChild(tr);
+  }
+}
+function applyCsvText(txt, sourceLabel){
+  const lines = txt.split("\n");
+  if(!/^itemId,/.test(lines[0])) throw new Error("Response is not a TSM items.csv");
+  let updated=0, asof=null;
+  for (const line of lines.slice(1)){
+    const parts=line.split(","); if(parts.length<3) continue;
+    const id=parseInt(parts[0]); const mv=parseInt(parts[2]);
+    if(!isNaN(id) && !isNaN(mv) && id in priceGold && !TRACKED.find(t=>t.id===id && t.free)){
+      priceGold[id]=mv/10000; updated++;
+    }
+    if(!asof && parts.length>4) asof=parts[parts.length-1].trim();
+  }
+  document.getElementById("asof").textContent =
+    `Prices as of: ${asof||"unknown"} — ${updated} prices updated (${sourceLabel})`;
+  renderPrices(); if(lastResult) render(lastResult);
+  return updated;
+}
+
+document.getElementById("csvfile").addEventListener("change", ev=>{
+  const f = ev.target.files[0]; if(!f) return;
+  f.text().then(txt=>applyCsvText(txt,"file"))
+    .catch(e=>{ document.getElementById("pricehint").insertAdjacentHTML("beforeend", `<br><span class="warn">✗ ${e.message}</span>`); });
+});
+
+async function fetchWithTimeout(url, ms){
+  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(), ms);
+  try{ return await fetch(url, {signal:ctrl.signal}); } finally{ clearTimeout(t); }
+}
+document.getElementById("updateprices").addEventListener("click", async ()=>{
+  const btn=document.getElementById("updateprices");
+  const tsmUrl=document.getElementById("tsmurl").value.trim();
+  const enc=encodeURIComponent(tsmUrl);
+  const sources=[
+    {label:"hosted (repo)", url:VERSIONS[VER].hosted+"?t="+Date.now()}, // same-origin copy updated by GitHub Action — no CORS needed
+    {label:"direct",        url:tsmUrl},
+    {label:"cors.lol",      url:`https://api.cors.lol/?url=${enc}`},
+    {label:"corsproxy.io",  url:`https://corsproxy.io/?url=${enc}`},
+    {label:"codetabs",      url:`https://api.codetabs.com/v1/proxy?quest=${enc}`},
+    {label:"allorigins",    url:`https://api.allorigins.win/raw?url=${enc}`},
+  ];
+  btn.disabled=true; const old=btn.textContent; btn.textContent="Loading prices …";
+  let ok=false, errs=[];
+  for(const s of sources){
+    try{
+      const r=await fetchWithTimeout(s.url, 25000);
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      applyCsvText(await r.text(), s.label);
+      ok=true; break;
+    }catch(e){ errs.push(`${s.label}: ${e.name==="AbortError"?"Timeout":e.message}`); }
+  }
+  if(!ok){
+    document.getElementById("asof").innerHTML =
+      `<span class="warn">✗ Automatic update failed (${errs.join(" · ")}). `+
+      `<a href="${tsmUrl}" target="_blank" rel="noopener" style="color:var(--accent)">Open the CSV manually</a>, save it, and load it via the file input below. `+
+      `Embedded prices from ${PRICES_ASOF} remain active.</span>`;
+  }
+  btn.disabled=false; btn.textContent=old;
+});
+
+// ---------- helpers ----------
+const sleep = ms=>new Promise(r=>setTimeout(r,ms));
+function fmtGold(copper){
+  const neg = copper<0; copper=Math.round(Math.abs(copper));
+  const g=Math.floor(copper/10000), s=Math.floor(copper%10000/100), c=copper%100;
+  return `${neg?"-":""}<span class="g">${g.toLocaleString("en-US")}g</span> <span class="s">${String(s).padStart(2,"0")}s</span> <span class="c">${String(c).padStart(2,"0")}c</span>`;
+}
+function log(msg){
+  const el=document.getElementById("status"); el.style.display="block";
+  el.textContent += msg+"\n"; el.scrollTop=el.scrollHeight;
+}
+function parseCode(v){
+  const m = v.match(/reports\/([A-Za-z0-9:]+)/); if(m) return m[1];
+  if(/^[A-Za-z0-9:]{10,}$/.test(v.trim())) return v.trim();
+  return null;
+}
+async function api(path, key, params={}){
+  const q = new URLSearchParams({...params, api_key:key});
+  const r = await fetch(`https://${wclHost()}/v1/${path}?${q}`);
+  if(!r.ok) throw new Error(`${path} → HTTP ${r.status}`);
+  return r.json();
+}
+// consumption estimation from buff bands vs fight boundaries
+// persist=true (flasks): survive death — wipe artifacts (band ends at death, restarts
+// next pull) are NOT new applications; only a start >duration after the last inferred
+// application counts, capped at what fits into the report's wall-clock length.
+function estimateUses(bands, fights, durMs, persist, reportDur){
+  bands=[...bands].sort((a,b)=>a.startTime-b.startTime);
+  let uses=0, lastApp=null;
+  if(persist){
+    for(const b of bands){
+      if(lastApp===null || (b.startTime-lastApp)>durMs){ uses++; lastApp=b.startTime; }
+    }
+    return Math.min(uses, Math.floor(reportDur/durMs)+1);
+  }
+  // elixirs & scrolls: lost on death -> mid-fight (re)application is a genuine new use
+  const bound=t=>fights.find(f=>f.start_time<=t && t<=f.end_time);
+  let prevEndAtFightEnd=false;
+  for(const b of bands){
+    const fb=bound(b.startTime);
+    const atPull = fb && Math.abs(b.startTime-fb.start_time)<1500;
+    let fresh;
+    if(lastApp===null) fresh=true;
+    else if(!atPull) fresh=true; // applied mid-fight
+    else fresh = !(prevEndAtFightEnd && (b.startTime-lastApp)<=durMs);
+    if(fresh){uses++; lastApp=b.startTime;}
+    const fe=bound(b.endTime);
+    prevEndAtFightEnd = !!(fe && Math.abs(b.endTime-fe.end_time)<1500);
+  }
+  return uses;
+}
+
+// ---------- main ----------
+let lastResult=null;
+document.getElementById("run").addEventListener("click", analyze);
+document.getElementById("logurl").addEventListener("keydown", e=>{ if(e.key==="Enter") analyze(); });
+
+async function analyze(){
+  const btn=document.getElementById("run");
+  const code=parseCode(document.getElementById("logurl").value);
+  const key=document.getElementById("apikey").value.trim();
+  document.getElementById("status").textContent="";
+  if(!code){ log("⚠ No report code recognized — paste a URL or code."); return; }
+  if(!key){ log("⚠ API key missing."); return; }
+  btn.disabled=true;
+  try{
+    log(`Report ${code}: loading fights & roster …`);
+    const rep = await api(`report/fights/${code}`, key);
+    const fights=(rep.fights||[]).map(f=>({start_time:f.start_time, end_time:f.end_time}));
+    const end = rep.end - rep.start;
+    const owners={}; // name -> owner name (pets)
+    const byId={};
+    for(const p of rep.friendlies||[]) byId[p.id]=p.name;
+    for(const p of rep.friendlyPets||[]){
+      owners[p.name] = byId[p.petOwner] || p.name;
+    }
+    const resolve = (name,type)=> (type==="Pet"||owners[name]) ? (owners[name]||name) : name;
+    const idName={}; for(const p of rep.friendlies||[]) idName[p.id]=p.name;
+    for(const p of rep.friendlyPets||[]) idName[p.id]=byId[p.petOwner]||p.name;
+
+    log(`  ${fights.length} fights, ${(rep.friendlies||[]).length} players. Scanning buffs …`);
+    const buffTable = await api(`report/tables/buffs/${code}`, key, {start:0, end});
+    const auraByName = {};
+    for(const a of buffTable.auras||[]) auraByName[a.name.toLowerCase()] = a.guid;
+
+    const usage = {}; // player -> {item: count}
+    const addUse=(player,item,n)=>{ if(n<=0)return; (usage[player]=usage[player]||{}); usage[player][item]=(usage[player][item]||0)+n; };
+
+    for(const t of allTracked()){
+      if(t.m==="buff"){
+        const guids=new Set(t.guids||[]);
+        for(const nm of t.names){ const g=auraByName[nm.toLowerCase()]; if(g) guids.add(g); }
+        if(!guids.size) continue;
+        const detail=[];
+        for(const guid of guids){
+          const d = await api(`report/tables/buffs/${code}`, key, {start:0, end, abilityid:guid});
+          for(const a of d.auras||[]){
+            if(!a.bands || !a.bands.length) continue;
+            const n = estimateUses(a.bands, fights, t.dur*60*1000, !!t.persist, end);
+            if(t.persist){
+              const cap = Math.floor(end/(t.dur*60*1000))+1;
+              if(n>cap) log(`  ⚠ ${t.item}/${a.name}: ${n} > cap ${cap} — clamped`);
+              detail.push(`${resolve(a.name,a.type)}=${Math.min(n,cap)}`);
+            }
+            addUse(resolve(a.name,a.type), t.item, n);
+          }
+          await sleep(120);
+        }
+        log(`  ✓ ${t.item}`+(detail.length?`  [${detail.join(", ")}]`:""));
+      } else if(t.m==="auto"){
+        // same split as the built-ins, resolved automatically per log:
+        // buff with this exact name in the report -> uptime estimation; otherwise -> cast counting by ability name
+        const guids=[...new Set((buffTable.auras||[]).filter(a=>a.name.toLowerCase()===t.item.toLowerCase()).map(a=>a.guid))];
+        if(guids.length){
+          const dur = /^flask/i.test(t.item)?120 : /^scroll/i.test(t.item)?30 : 60;
+          const persist = /^flask/i.test(t.item);
+          const detail=[];
+          for(const guid of guids){
+            const d = await api(`report/tables/buffs/${code}`, key, {start:0, end, abilityid:guid});
+            for(const a of d.auras||[]){
+              if(!a.bands || !a.bands.length) continue;
+              const n = estimateUses(a.bands, fights, dur*60*1000, persist, end);
+              if(persist) detail.push(`${resolve(a.name,a.type)}=${Math.min(n, Math.floor(end/(dur*60*1000))+1)}`);
+              addUse(resolve(a.name,a.type), t.item, n);
+            }
+            await sleep(120);
+          }
+          log(`  ✓ ${t.item} [auto: buff, ${dur} min${persist?", persists":""}]`+(detail.length?` [${detail.join(", ")}]`:""));
+        } else {
+          let cursor=0, pages=0, found=0;
+          do{
+            const d = await api(`report/events/casts/${code}`, key, {start:cursor, end, filter:`ability.name="${t.item}"`});
+            for(const e of d.events||[]){
+              const who=idName[e.sourceID]; if(!who) continue;
+              addUse(who, t.item, 1); found++;
+            }
+            cursor = d.nextPageTimestamp || 0; pages++;
+            await sleep(120);
+          }while(cursor && pages<20);
+          log(`  ✓ ${t.item} [auto: cast]${found?` (${found})`:" (nothing found — check the exact name)"}`);
+        }
+      } else {
+        let found=0;
+        for(const sp of t.spells){
+          const d = await api(`report/tables/casts/${code}`, key, {start:0, end, abilityid:sp});
+          for(const e of d.entries||[]){
+            if(e.total>0){ addUse(resolve(e.name,e.type), t.item, e.total); found+=e.total; }
+          }
+          await sleep(120);
+        }
+        log(`  ✓ ${t.item}${found?` (${found})`:""}`);
+      }
+    }
+
+    const combatMs = fights.reduce((s,f)=>s+(f.end_time-f.start_time),0);
+    lastResult = {usage, code, title:rep.title||code, date:new Date(rep.start).toLocaleDateString("en-GB"),
+                  nFights:fights.length, combatMs};
+    render(lastResult);
+    log("Done.");
+  }catch(err){
+    log("✗ Error: "+err.message+"  (Hints: file opened locally? API key valid?)");
+  }finally{ btn.disabled=false; }
+}
+
+function render(res){
+  const costOf = t => t ? (priceGold[t.id]||0)*10000/(t.charges||1) : 0; // copper per use
+  const T = {}; allTracked().forEach(t=>T[t.item]=t);
+  const players = Object.entries(res.usage).map(([name,items])=>{
+    let copper=0, uses=0;
+    for(const [item,n] of Object.entries(items)){ copper += n*costOf(T[item]); uses+=n; }
+    return {name, items, copper, uses};
+  }).sort((a,b)=>b.copper-a.copper || b.uses-a.uses);
+  const grand = players.reduce((s,p)=>s+p.copper,0);
+  const maxc = Math.max(...players.map(p=>p.copper),1);
+
+  document.getElementById("grandtotal").innerHTML = fmtGold(grand);
+  document.getElementById("generated").textContent = "Generated: " + new Date().toLocaleString("en-GB",{dateStyle:"medium", timeStyle:"short"});
+  const link = `https://${wclHost()}/reports/${res.code}`;
+  document.getElementById("reportline").innerHTML =
+    `Report: <a href="${link}" target="_blank" rel="noopener">${res.title}</a> · ${res.date} · Prices: TSM eu-fresh`;
+
+  const tb = document.querySelector("#board tbody"); tb.innerHTML="";
+  players.forEach((p,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = `<td class="rank num">${i+1}</td>
+      <td class="playercell">${p.name}<span class="caret">▾ details</span>
+        <div class="bar" style="width:${Math.max(2,100*p.copper/maxc)}%"></div></td>
+      <td class="num">${p.uses}</td><td class="num">${fmtGold(p.copper)}</td>`;
+    const dt=document.createElement("tr"); dt.className="detail";
+    const list = Object.entries(p.items).sort((a,b)=>b[1]*costOf(T[b[0]])-a[1]*costOf(T[a[0]]))
+      .map(([item,n])=>`${n}× ${item}`).join(" · ");
+    dt.innerHTML = `<td></td><td colspan="3">${list}</td>`;
+    tr.querySelector(".playercell").addEventListener("click", ()=>dt.classList.toggle("open"));
+    tb.appendChild(tr); tb.appendChild(dt);
+  });
+
+  const it = document.querySelector("#itemtable tbody"); it.innerHTML="";
+  const totals = {};
+  for(const p of players) for(const [item,n] of Object.entries(p.items)) totals[item]=(totals[item]||0)+n;
+  Object.entries(totals).map(([item,n])=>({item,n,copper:n*costOf(T[item])}))
+    .sort((a,b)=>b.copper-a.copper)
+    .forEach(r=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${r.item}</td><td class="num">${fmtGold(costOf(T[r.item]))}</td>
+        <td class="num">${r.n}</td><td class="num">${fmtGold(r.copper)}</td>`;
+      it.appendChild(tr);
+    });
+
+  document.getElementById("results").style.display="block";
+  lastComputed = {players, grand, totals, T, costOf, res};
+}
+
+// ---------- export & discord ----------
+let lastComputed=null;
+const gTxt = c => (c/10000).toLocaleString("en-US",{minimumFractionDigits:1, maximumFractionDigits:1})+" g";
+
+document.getElementById("exportcsv").addEventListener("click", ()=>{
+  if(!lastComputed) return;
+  const {players, grand, totals, T, costOf, res}=lastComputed;
+  let csv="\uFEFFRaid Consumables Report;"+res.title+";"+res.date+"\nReport;https://"+wclHost()+"/reports/"+res.code+"\nGenerated;"+new Date().toLocaleString("en-GB")+"\n\nRank;Player;Uses;Gold\n";
+  players.forEach((p,i)=>{csv+=`${i+1};${p.name};${p.uses};${(p.copper/10000).toFixed(2).replace(".",",")}\n`;});
+  csv+=`;Total;;${(grand/10000).toFixed(2).replace(".",",")}\n\nItem;Unit price (g);Uses;Total (g)\n`;
+  Object.entries(totals).map(([item,n])=>({item,n,c:n*costOf(T[item])})).sort((a,b)=>b.c-a.c)
+    .forEach(r=>{csv+=`${r.item};${(costOf(T[r.item])/10000).toFixed(2).replace(".",",")};${r.n};${(r.c/10000).toFixed(2).replace(".",",")}\n`;});
+  // usage matrix like the "Usage" sheet: items as rows, players as columns
+  csv+="\nUsage matrix\nItem;"+players.map(p=>p.name).join(";")+";Total\n";
+  const itemOrder = Object.entries(totals).map(([item,n])=>({item,c:n*costOf(T[item])})).sort((a,b)=>b.c-a.c).map(r=>r.item);
+  for(const item of itemOrder){
+    const row=players.map(p=>p.items[item]||"");
+    csv+=item+";"+row.join(";")+";"+totals[item]+"\n";
+  }
+  csv+="Total;"+players.map(p=>p.uses).join(";")+";"+players.reduce((s,p)=>s+p.uses,0)+"\n";
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`consume_spend_${res.code}.csv`; a.click();
+  shareMsg("CSV exported.", true);
+});
+
+const LOGO = "data:image/png;base64,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";
+const VERSION = "v1.9 · 2026-07-16 · Anniversary / Classic Era switch";
+const GUILD = "Almost Awesome";
+const REALM = "Thunderstrike Alliance";
+
+const VERSIONS = {
+  anniversary: { wcl:"classic.warcraftlogs.com",
+                 tsm:"https://public-data.tradeskillmaster.com/classic/eu-fresh/realm/thunderstrike-alliance/items.csv",
+                 hosted:"items.csv" },
+  era:         { wcl:"vanilla.warcraftlogs.com",
+                 tsm:"https://public-data.tradeskillmaster.com/classic/eu/region/items.csv",
+                 hosted:"items-era.csv" },
+};
+let VER = "anniversary";
+try{ if(localStorage.getItem("aa_version") in VERSIONS) VER = localStorage.getItem("aa_version"); }catch(_){}
+const wclHost = () => VERSIONS[VER].wcl;
+
+// ---------- chart ----------
+let _logoImg=null;
+function loadLogo(){
+  if(_logoImg) return Promise.resolve(_logoImg);
+  return new Promise(res=>{
+    const im=new Image();
+    im.onload=()=>{_logoImg=im; res(im);};
+    im.onerror=()=>res(null);
+    im.src=LOGO;
+  });
+}
+async function drawChart(){
+  const {players, grand, res}=lastComputed;
+  const logo=await loadLogo();
+  const DPR=2, W=1080;
+  const padX=64, top=150, rowH=42, bottom=86;
+  const H=top+players.length*rowH+bottom;
+  const cv=document.createElement("canvas"); cv.width=W*DPR; cv.height=H*DPR;
+  const x=cv.getContext("2d"); x.scale(DPR,DPR);
+  const SANS="'Segoe UI', 'Helvetica Neue', system-ui, sans-serif";
+  const MONO="ui-monospace, 'Consolas', monospace";
+  const ORANGE_A="#ffc93c", ORANGE_B="#f6941d", INK="#eceaf1", DIM="#8b8797", FAINT="#565264";
+
+  // flat dark background
+  x.fillStyle="#15131a"; x.fillRect(0,0,W,H);
+
+  // header: logo + name left, total right
+  if(logo){
+    const lh=56, lw=lh*logo.width/logo.height;
+    x.drawImage(logo, padX, 36, lw, lh);
+    x.fillStyle=INK; x.font="600 24px "+SANS;
+    x.fillText("Almost Awesome", padX+lw+18, 60);
+    x.fillStyle=DIM; x.font="400 14px "+SANS;
+    x.fillText("Raid Consumables Report  ·  "+res.title+"  ·  "+res.date, padX+lw+18, 84);
+  } else {
+    x.fillStyle=INK; x.font="600 24px "+SANS; x.fillText("Almost Awesome", padX, 60);
+    x.fillStyle=DIM; x.font="400 14px "+SANS;
+    x.fillText("Raid Consumables Report  ·  "+res.title+"  ·  "+res.date, padX, 84);
+  }
+  x.textAlign="right";
+  x.fillStyle=DIM; x.font="500 11px "+SANS;
+  x.fillText("TOTAL", W-padX, 46);
+  const gr=x.createLinearGradient(W-300,0,W-padX,0);
+  gr.addColorStop(0,ORANGE_A); gr.addColorStop(1,ORANGE_B);
+  x.fillStyle=gr; x.font="600 30px "+SANS;
+  x.fillText(gTxt(grand), W-padX, 78);
+  x.textAlign="left";
+
+  // hairline divider
+  x.strokeStyle="rgba(255,255,255,.08)"; x.lineWidth=1;
+  x.beginPath(); x.moveTo(padX, 116); x.lineTo(W-padX, 116); x.stroke();
+
+  // rows: rank · name · track+bar · value
+  const nameX=padX+34, barX=padX+210, valW=110, barMax=W-padX-valW-barX+padX-24-padX+padX;
+  const barEnd=W-padX-valW, barLen=barEnd-barX;
+  const maxC=Math.max(...players.map(p=>p.copper),1);
+  players.forEach((p,i)=>{
+    const y=top+i*rowH, cy=y+rowH/2;
+    x.fillStyle=FAINT; x.font="500 12px "+MONO; x.textAlign="right";
+    x.fillText(String(i+1).padStart(2," "), nameX-14, cy+4);
+    x.fillStyle= i<3 ? INK : DIM; x.font=(i<3?"600":"400")+" 15px "+SANS; x.textAlign="left";
+    x.fillText(p.name, nameX, cy+5);
+    // track
+    x.fillStyle="rgba(255,255,255,.055)";
+    x.beginPath(); x.roundRect(barX, cy-4, barLen, 8, 4); x.fill();
+    // fill
+    const w=Math.max(4, barLen*p.copper/maxC);
+    const g2=x.createLinearGradient(barX,0,barX+w,0);
+    g2.addColorStop(0,ORANGE_A); g2.addColorStop(1,ORANGE_B);
+    x.fillStyle= i<3 ? g2 : "rgba(246,148,29,.45)";
+    x.beginPath(); x.roundRect(barX, cy-4, w, 8, 4); x.fill();
+    x.fillStyle= i<3 ? INK : DIM; x.font="500 13px "+MONO; x.textAlign="right";
+    x.fillText(gTxt(p.copper), W-padX, cy+4);
+    x.textAlign="left";
+  });
+
+  // footer
+  const fy=H-36;
+  x.strokeStyle="rgba(255,255,255,.08)";
+  x.beginPath(); x.moveTo(padX, fy-22); x.lineTo(W-padX, fy-22); x.stroke();
+  x.fillStyle=FAINT; x.font="400 11px "+SANS;
+  const asof=document.getElementById("asof").textContent.replace("Prices as of: ","").split(" — ")[0];
+  x.fillText(wclHost()+"/reports/"+res.code+"   ·   Prices: TSM ("+asof+")   ·   "+
+    new Date().toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"}), padX, fy);
+  x.textAlign="right"; x.fillStyle="rgba(246,148,29,.65)"; x.font="600 11px "+SANS;
+  x.fillText("Almost Awesome", W-padX, fy);
+  x.textAlign="left";
+  return cv;
+}
+const chartBlob = async () => { const cv=await drawChart(); return new Promise(r=>cv.toBlob(r,"image/png")); };
+
+
+function buildFunFacts(){
+  const {players, grand, totals, T, costOf, res}=lastComputed;
+  const facts=[];
+  const g=c=>gTxt(c);
+  // teuerster Schluck
+  const used=Object.keys(totals).map(item=>({item, unit:costOf(T[item])})).filter(r=>r.unit>0);
+  if(used.length){
+    const top=used.sort((a,b)=>b.unit-a.unit)[0];
+    const drinker=players.filter(p=>p.items[top.item]).sort((a,b)=>b.items[top.item]-a.items[top.item])[0];
+    facts.push(`💸 Most expensive sip of the night: **${top.item}** — ${g(top.unit)} apiece.`+
+      (drinker?` ${drinker.name} downed ${drinker.items[top.item]} of them.`:""));
+  }
+  // meistgenutztes Item
+  const most=Object.entries(totals).sort((a,b)=>b[1]-a[1])[0];
+  if(most) facts.push(`⚗️ Guild pharmacy: **${most[1]}× ${most[0]}** in a single night — ${g(most[1]*costOf(T[most[0]]))} total.`);
+  // Sparfuchs / Durstigster
+  const paying=players.filter(p=>p.copper>0);
+  const cheap=[...paying].sort((a,b)=>a.copper-b.copper)[0];
+  if(cheap) facts.push(`🧪 Budget champion: **${cheap.name}** at just ${g(cheap.copper)}. Efficiency or stinginess? You decide.`);
+  const freeloaders=players.filter(p=>p.copper===0 && p.uses>0);
+  if(freeloaders.length) facts.push(`🆓 Got through the night entirely for free: **${freeloaders.map(p=>p.name).join(", ")}** — nothing but conjured mage/warlock goods. Respect.`);
+  const thirsty=[...players].sort((a,b)=>b.uses-a.uses)[0];
+  if(thirsty && res.combatMs) facts.push(`🍹 Thirstiest raider: **${thirsty.name}** with ${thirsty.uses} consumable uses — one every ${Math.round(res.combatMs/1000/thirsty.uses)} seconds of combat.`);
+  // Sprengmeister
+  const boom=["Fel Iron Bomb","Super Sapper Charge","Goblin Sapper Charge"];
+  const bombers=players.map(p=>({name:p.name,
+      n:boom.reduce((s,i)=>s+(p.items[i]||0),0),
+      c:boom.reduce((s,i)=>s+(p.items[i]||0)*costOf(T[i]||{id:0}),0)}))
+    .filter(p=>p.n>0).sort((a,b)=>b.n-a.n);
+  if(bombers.length) facts.push(`💣 Demolitions expert: **${bombers[0].name}** — ${bombers[0].n} detonations, ~${g(bombers[0].c)} gone up in smoke.`);
+  // Flask-Verweigerer
+  const flaskItems=Object.keys(totals).filter(i=>i.startsWith("Flask"));
+  if(flaskItems.length){
+    const noFlask=players.filter(p=>!flaskItems.some(f=>p.items[f])).length;
+    if(noFlask>0) facts.push(`🐔 Flask check: **${noFlask} of ${players.length}** raiders showed up without a flask. The raid leader sees this.`);
+  }
+  // Anteil des Spitzenreiters
+  if(players.length && grand>0){
+    const share=Math.round(100*players[0].copper/grand);
+    if(share>=10) facts.push(`👑 **${players[0].name}** alone accounts for **${share}%** of the guild's total spend.`);
+  }
+  // Kosten pro Pull & Burn-Rate
+  if(res.nFights) facts.push(`📊 Cost per pull: ${g(grand/res.nFights)} across ${res.nFights} fights — every wipe costs real gold.`);
+  if(res.combatMs) facts.push(`⏱️ Burn rate: ~${g(grand/(res.combatMs/60000))} per minute of combat. An expensive hobby.`);
+  // Epic-Flug-Vergleich
+  const epic=5000*10000;
+  facts.push(grand>=epic
+    ? `🐎 This night cost more than full epic flying training (5,000 g).`
+    : `🐎 For scale: ${Math.round(100*grand/epic)}% of epic flying training (5,000 g) evaporated tonight.`);
+  return facts;
+}
+function pickFacts(n){
+  const f=buildFunFacts();
+  for(let i=f.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [f[i],f[j]]=[f[j],f[i]]; }
+  return f.slice(0,n);
+}
+
+function buildMarkdown(){
+  const {players, grand, totals, T, costOf, res}=lastComputed;
+  const medals=["🥇","🥈","🥉"];
+  let md=`**⚔️ Raid Consumables Report — ${res.title} (${res.date})**\n`;
+  md+=`Total: **${gTxt(grand)}** · ${players.length} raiders · <https://${wclHost()}/reports/${res.code}>\n\n`;
+  players.slice(0,3).forEach((p,i)=>{ md+=`${medals[i]} **${p.name}** — ${gTxt(p.copper)}\n`; });
+  md+="```\n"+players.map((p,i)=>`${String(i+1).padStart(2)}. ${p.name.padEnd(14)} ${gTxt(p.copper).padStart(10)}`).join("\n")+"\n```";
+  const top=Object.entries(totals).map(([item,n])=>({item,n,c:n*costOf(T[item])})).sort((a,b)=>b.c-a.c).slice(0,5);
+  md+="\n**Most expensive consumables:** "+top.map(r=>`${r.item} (${r.n}× · ${gTxt(r.c)})`).join(" · ");
+  md+="\n\n🎲 **Fun Facts**\n"+pickFacts(2).map(f=>"• "+f).join("\n");
+  return md;
+}
+document.getElementById("copymd").addEventListener("click", async ()=>{
+  if(!lastComputed) return;
+  try{ await navigator.clipboard.writeText(buildMarkdown()); shareMsg("Markdown copied — ready to paste into Discord.", true); }
+  catch(e){ shareMsg("Clipboard blocked: "+e.message, false); }
+});
+
+function chunkLines(lines, limit){ // respect Discord's 1024-char field limit
+  const out=[]; let cur="";
+  for(const l of lines){
+    if((cur+l+"\n").length > limit-8){ out.push(cur); cur=""; }
+    cur+=l+"\n";
+  }
+  if(cur) out.push(cur);
+  return out;
+}
+document.getElementById("senddiscord").addEventListener("click", async ()=>{
+  if(!lastComputed){ shareMsg("Analyze a log first.", false); return; }
+  const hook=document.getElementById("webhook").value.trim();
+  if(!/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(hook)){
+    shareMsg("That is not a Discord webhook URL (https://discord.com/api/webhooks/…).", false); return;
+  }
+  const {players, grand, totals, T, costOf, res}=lastComputed;
+  const medals=["🥇","🥈","🥉"];
+  const top=Object.entries(totals).map(([item,n])=>({item,n,c:n*costOf(T[item])})).sort((a,b)=>b.c-a.c).slice(0,6);
+  const embed={
+    author:{name:GUILD+" · "+REALM, icon_url:"attachment://logo.png"},
+    title:`⚔️ Raid Consumables Report — ${res.title}`,
+    url:`https://${wclHost()}/reports/${res.code}`,
+    color:0xF8C53A,
+    description:`Raid on **${res.date}** · ${players.length} raiders\n`+
+      players.slice(0,3).map((p,i)=>`${medals[i]} **${p.name}** — ${gTxt(p.copper)}`).join("\n")+
+      `\n\n💰 **Total spend: ${gTxt(grand)}**`,
+    fields:[{name:"🧪 Most expensive consumables",
+      value: top.map(r=>`**${r.item}** — ${r.n}× · ${gTxt(r.c)}`).join("\n"), inline:false},
+      {name:"🎲 Fun Facts", value: pickFacts(2).map(f=>"• "+f).join("\n").slice(0,1024), inline:false}],
+    image:{url:"attachment://chart.png"},
+    footer:{text:GUILD+" · Prices: TSM eu-fresh · "+document.getElementById("asof").textContent.replace("Prices as of: ","as of ").split(" — ")[0]},
+    timestamp:new Date().toISOString()
+  };
+  const payload={username:GUILD,
+    embeds:[embed]};
+  const btn=document.getElementById("senddiscord"); btn.disabled=true;
+  const chart=await chartBlob();
+  try{
+    // Stage 1: embed + chart + logo as attachments
+    const form=new FormData();
+    form.append("payload_json", JSON.stringify(payload));
+    form.append("files[0]", chart, "chart.png");
+    form.append("files[1]", logoBlobFromB64(), "logo.png");
+    const r=await fetch(hook,{method:"POST",body:form});
+    if(r.status===204||r.ok){ shareMsg("✓ Posted to Discord — chart included.", true); btn.disabled=false; return; }
+    if(r.status===429){ shareMsg("Discord rate limit — wait a moment and send again.", false); btn.disabled=false; return; }
+    shareMsg("Discord error: HTTP "+r.status+" — "+(await r.text()).slice(0,200), false);
+    btn.disabled=false; return;
+  }catch(e1){
+    // Stage 2: plain JSON embed without attachments (in case multipart/uploads are blocked)
+    try{
+      const p2=JSON.parse(JSON.stringify(payload));
+      delete p2.embeds[0].image; delete p2.embeds[0].author.icon_url;
+      const r2=await fetch(hook,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p2)});
+      if(r2.status===204||r2.ok){
+        shareMsg("✓ Embed posted — but without the chart: your browser/adblocker blocks file uploads. The chart was downloaded instead, just attach it manually.", true);
+        downloadBlob(chart, `consume_chart_${lastComputed.res.code}.png`);
+        btn.disabled=false; return;
+      }
+      shareMsg("Discord error: HTTP "+r2.status, false);
+    }catch(e2){
+      // Stage 3: network fully blocked -> provide everything locally
+      shareMsg("✗ discord.com is unreachable from this browser ("+e1.message+"). "+
+        "Typical causes: Brave Shields / adblocker / firewall blocking discord.com for local files — "+
+        "disable the shield for this file or try another browser. "+
+        "The chart was downloaded and the markdown is in your clipboard — post both manually.", false);
+      downloadBlob(chart, `consume_chart_${lastComputed.res.code}.png`);
+      try{ await navigator.clipboard.writeText(buildMarkdown()); }catch(_){}
+    }
+    btn.disabled=false;
+  }
+});
+function logoBlobFromB64(){
+  const b64=LOGO.split(",")[1];
+  const bin=atob(b64), arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:"image/png"});
+}
+function downloadBlob(blob, name){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+}
+function shareMsg(msg, ok){
+  const el=document.getElementById("sharestatus");
+  el.textContent=msg; el.className="hint "+(ok?"ok":"warn");
+}
+// ---------- custom consumables UI ----------
+function renderCustomList(){
+  const tb=document.getElementById("customlist");
+  if(!CUSTOM.length){ tb.innerHTML="<tr><td class='hint'>No custom consumables yet.</td></tr>"; return; }
+  tb.innerHTML="<tr><th>Name</th><th>Item ID</th><th>Detection</th><th></th></tr>";
+  CUSTOM.forEach((c,i)=>{
+    const tr=document.createElement("tr");
+    const det = c.m==="cast" ? "cast: "+c.spells.join(", ") : c.m==="buff" ? `buff: "${c.buffName}" · ${c.dur} min`+(c.persist?" · survives death":"") : "automatic (like built-ins)";
+    tr.innerHTML=`<td>${c.item} ★</td><td class="num">${c.id}</td><td>${det}</td><td></td>`;
+    const btn=document.createElement("button"); btn.className="ghost"; btn.textContent="✕"; btn.title="Remove";
+    btn.addEventListener("click",()=>{ CUSTOM.splice(i,1); saveCustom(); renderCustomList(); renderPrices();
+      document.getElementById("c_msg").textContent="Removed — takes effect on the next analysis."; });
+    tr.lastElementChild.appendChild(btn);
+    tb.appendChild(tr);
+  });
+}
+document.getElementById("c_add").addEventListener("click", ()=>{
+  const msg=document.getElementById("c_msg");
+  const name=document.getElementById("c_name").value.trim();
+  const id=parseInt(document.getElementById("c_itemid").value.trim());
+  if(!name){ msg.textContent="⚠ Name missing."; return; }
+  if(!id||id<1){ msg.textContent="⚠ TSM item ID missing or invalid."; return; }
+  if(allTracked().some(t=>t.item.toLowerCase()===name.toLowerCase())){ msg.textContent="⚠ An entry with this name already exists."; return; }
+  CUSTOM.push({item:name, id, m:"auto"}); saveCustom();
+  if(!(id in priceGold)) priceGold[id]=(PRICES[id]||0)/10000;
+  renderCustomList(); renderPrices();
+  const hasPrice = priceGold[id]>0;
+  msg.textContent = `✓ Added — detection is automatic on the next analysis.`+(hasPrice?"":" No embedded price for this item ID — hit \"Update TSM prices now\" or enter it manually.");
+  ["c_name","c_itemid"].forEach(x=>document.getElementById(x).value="");
+});
+renderCustomList();
+
+// game version dropdown
+{
+  const sel=document.getElementById("gamever");
+  sel.value=VER;
+  document.getElementById("tsmurl").value = VERSIONS[VER].tsm;
+  sel.addEventListener("change", ()=>{
+    VER = sel.value;
+    try{ localStorage.setItem("aa_version", VER); }catch(_){}
+    document.getElementById("tsmurl").value = VERSIONS[VER].tsm;
+    document.getElementById("asof").textContent =
+      "Prices as of: " + PRICES_ASOF + " — embedded defaults are Anniversary prices; hit \"Update TSM prices now\" after switching.";
+  });
+}
+
+renderPrices();
+document.getElementById("asof").textContent = "Prices as of: " + PRICES_ASOF + " (source: TSM Public Pricing Data)";
+// remember key & webhook locally (browser-only)
+try{
+  const K="aa_wcl_key", W="aa_webhook";
+  const ak=document.getElementById("apikey"), wh=document.getElementById("webhook");
+  if(localStorage.getItem(K)) ak.value=localStorage.getItem(K);
+  if(localStorage.getItem(W)) wh.value=localStorage.getItem(W);
+  ak.addEventListener("input", ()=>localStorage.setItem(K, ak.value.trim()));
+  wh.addEventListener("input", ()=>localStorage.setItem(W, wh.value.trim()));
+}catch(_){/* storage blocked -> session-only */}
+document.getElementById("version").textContent = "· Tool "+VERSION;
+document.getElementById("hdrlogo").src = LOGO;
+</script>
+</body>
+</html>
