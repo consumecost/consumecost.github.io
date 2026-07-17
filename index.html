@@ -1241,7 +1241,7 @@ async function drawTablePNG(){
   const tblW=W-2*padX;
 
   const topY=150, headH=34, rowH=32, totH=36;
-  const secGap=18, secHead=18, subRowH=20, footH=86;
+  const secGap=18, secHead=18, subRowH=30, footH=86;
   const buffRows=Math.min(6, Object.keys(res.buffCasts||{}).length);
   const debuffRows=Math.min(6, (res.debuffRows||[]).length);
   const H=topY + headH + rows.length*rowH + totH + secGap + secHead + Math.max(buffRows, debuffRows)*subRowH + footH;
@@ -1393,12 +1393,15 @@ async function drawTablePNG(){
   if(debuffList.length){
     debuffList.forEach((r,i)=>{
       const iy=secY+18+i*subRowH;
-      const topBy=r.by?Object.entries(r.by).sort((a,b)=>b[1]-a[1])[0]?.[0]:"";
-      const label=r.name+(topBy?`  ·  ${topBy}`:"");
+      const appliers=r.by?Object.entries(r.by).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,c])=>`${n} (${c})`).join(" · "):"";
       x.textAlign="left"; x.fillStyle=INK; x.font="400 12px "+SANS;
-      x.fillText(fit(label, colW-60), rightX, iy);
+      x.fillText(fit(r.name, colW-60), rightX, iy);
+      if(appliers){
+        x.fillStyle=FAINT; x.font="400 10px "+SANS;
+        x.fillText(fit(appliers, colW-60), rightX, iy+14);
+      }
       x.textAlign="right"; x.fillStyle=DIM; x.font="500 12px "+MONO;
-      x.fillText(r.up+"%", rightX+colW-8, iy);
+      x.fillText(r.up+"%", rightX+colW-8, iy+8);
       x.textAlign="left";
     });
   } else {
