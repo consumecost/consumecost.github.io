@@ -406,8 +406,10 @@ function customTracked(){
 }
 function allTracked(){ return TRACKED.concat(customTracked()); }
 
-const priceGold = {}; // itemId -> gold (editable)
+const priceGold = {}; // itemId -> gold (editable, TSM market)
 for (const t of allTracked()) priceGold[t.id] = t.free ? 0 : (PRICES[t.id]||0)/10000;
+
+
 
 // ---------- price panel ----------
 function renderPrices(){
