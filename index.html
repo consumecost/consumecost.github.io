@@ -498,12 +498,25 @@ function fetchTsmPrices(){
   if(tsmFetchPromise) return tsmFetchPromise;
   const tsmUrl=document.getElementById("tsmurl").value.trim();
   const enc=encodeURIComponent(tsmUrl);
+  const isPreset = tsmUrl===VERSIONS[VER].tsm;
   const sources=[
-    // same-origin copy updated by GitHub Action (no CORS) — only valid when the URL matches what the Action fetches
-    ...(tsmUrl===VERSIONS[VER].tsm ? [{label:"hosted (repo)", url:VERSIONS[VER].hosted+"?t="+Date.now()}] : []),
+    // Same-origin copy refreshed every few hours by the "Update TSM prices"
+    // GitHub Action (.github/workflows/update-tsm-prices.yml). No CORS, no third
+    // party — the reliable route. Only valid for the preset URL (that's what the
+    // Action mirrors). Cache-busted so we always read the latest commit.
+    ...(isPreset ? [{label:"hosted (repo)", url:VERSIONS[VER].hosted+"?t="+Date.now()}] : []),
+    // jsDelivr mirror of that same committed file: a high-availability CDN that
+    // sends permissive CORS headers. Covers the brief window before GitHub Pages
+    // redeploys a fresh commit, or a Pages outage.
+    ...(isPreset ? [{label:"jsdelivr", url:`https://cdn.jsdelivr.net/gh/consumecost/consumecost.github.io@main/${VERSIONS[VER].hosted}`}] : []),
+    // Direct hit: only succeeds if TSM ever serves CORS headers; a harmless
+    // fast-fail otherwise.
     {label:"direct",        url:tsmUrl},
+    // Public CORS proxies: last-ditch fallbacks, mostly for non-preset (custom /
+    // auto-detected realm) URLs the routes above don't cover. Individually
+    // flaky, so we try several. (corsproxy.io dropped — it now 401s anonymous
+    // requests.)
     {label:"cors.lol",      url:`https://api.cors.lol/?url=${enc}`},
-    {label:"corsproxy.io",  url:`https://corsproxy.io/?url=${enc}`},
     {label:"codetabs",      url:`https://api.codetabs.com/v1/proxy?quest=${enc}`},
     {label:"allorigins",    url:`https://api.allorigins.win/raw?url=${enc}`},
   ];
