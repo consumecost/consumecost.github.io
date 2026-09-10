@@ -360,7 +360,7 @@ const TRACKED = [
   // Guardian elixirs (1h)
   {item:"Elixir of Draenic Wisdom", cat:"guardian",    id:32067, m:"buff", dur:60, names:["Elixir of Draenic Wisdom","Draenic Wisdom"]},
   {item:"Elixir of Major Fortitude", cat:"guardian",   id:32062, m:"buff", dur:60, names:["Elixir of Major Fortitude","Major Fortitude"]},
-  {item:"Elixir of Major Mageblood", cat:"guardian",   id:22840, m:"buff", dur:60, names:["Elixir of Major Mageblood","Major Mageblood"], guids:[28570]}, // guid fallback in case the aura name doesn't resolve in a log
+  {item:"Elixir of Major Mageblood", cat:"guardian",   id:22840, m:"buff", dur:60, names:["Elixir of Major Mageblood","Major Mageblood","Greater Mana Regeneration"], guids:[28509]}, // the on-use aura is logged as "Greater Mana Regeneration" (spell 28509), not the item name; 28570 was the alchemy recipe (never a buff) so detection matched nothing
   {item:"Earthen Elixir", cat:"guardian",              id:32063, m:"buff", dur:60, names:["Earthen Elixir"]},
   {item:"Elixir of Major Defense", cat:"guardian",     id:22834, m:"buff", dur:60, names:["Elixir of Major Defense","Major Defense"]},
   {item:"Elixir of Ironskin", cat:"guardian",          id:32068, m:"buff", dur:60, names:["Elixir of Ironskin","Ironskin"]},
