@@ -1,0 +1,77 @@
+name: Update TSM prices
+
+# Mirrors the TSM Public Pricing Data CSVs into the repo so the site can load
+# them same-origin (no CORS). The browser cannot fetch these files directly
+# (the TSM host sends no CORS headers) and the public CORS proxies the page
+# falls back to are unreliable, so we fetch server-side here and commit the
+# result. index.html serves items.csv / items-era.csv as its "hosted (repo)"
+# price source.
+
+on:
+  schedule:
+    # Every 4 hours (TSM serves the data with a 4h cache; polling faster gains
+    # nothing). Offset from the top of the hour to dodge scheduler congestion.
+    - cron: "23 */4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+# Never let two runs race on the same push.
+concurrency:
+  group: update-tsm-prices
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Refresh TSM price snapshots
+        env:
+          UA: "consumecost.github.io TSM price mirror (+https://github.com/consumecost/consumecost.github.io)"
+          ANNIVERSARY_URL: "https://public-data.tradeskillmaster.com/classic/eu-fresh/realm/thunderstrike-alliance/items.csv"
+          ERA_URL: "https://public-data.tradeskillmaster.com/classic/eu/region/items.csv"
+        run: |
+          set -uo pipefail
+
+          # Fetch $1 into $2, retrying a few times (TSM sits behind Cloudflare
+          # and occasionally returns transient 5xx). Only accept a genuine TSM
+          # items.csv (header must start with "itemId,") so we never commit an
+          # error page over good data. Returns non-zero if all attempts fail.
+          fetch() {
+            url="$1"; out="$2"
+            for attempt in 1 2 3 4 5; do
+              if curl -fsSL --max-time 60 -A "$UA" "$url" -o "$out.tmp" \
+                 && head -1 "$out.tmp" | grep -q '^itemId,'; then
+                mv "$out.tmp" "$out"
+                echo "OK $out: $(wc -c < "$out") bytes, $(wc -l < "$out") lines"
+                return 0
+              fi
+              echo "attempt $attempt for $out failed; retrying in $((attempt * 5))s"
+              rm -f "$out.tmp"
+              sleep $((attempt * 5))
+            done
+            echo "::error::Could not fetch a valid CSV for $out from $url"
+            return 1
+          }
+
+          fail=0
+          fetch "$ANNIVERSARY_URL" items.csv     || fail=1
+          fetch "$ERA_URL"         items-era.csv || fail=1
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add items.csv items-era.csv
+          if git diff --cached --quiet; then
+            echo "No price changes to commit."
+          else
+            git commit -m "Update TSM price snapshots"
+            git push || { echo "::error::git push failed"; exit 1; }
+          fi
+
+          # Surface a partial failure in the Actions tab, but only after having
+          # committed whichever snapshot did succeed.
+          [ "$fail" -eq 0 ] || { echo "::error::One or more TSM sources could not be fetched."; exit 1; }
