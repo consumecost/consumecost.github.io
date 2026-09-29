@@ -334,14 +334,18 @@ const PRICES = {"22854": 762397, "22866": 767859, "22853": 591502, "22851": 6115
 
 // duration in minutes for buff-estimation; charges divide the item price per use
 const TRACKED = [
-  // Flasks (2h, persist through death)
-  {item:"Flask of Relentless Assault", id:22854, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Relentless Assault","Relentless Assault"]},
-  {item:"Flask of Pure Death",         id:22866, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Pure Death","Pure Death"]},
-  {item:"Flask of Mighty Restoration", id:22853, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Mighty Restoration","Mighty Restoration"]},
-  {item:"Flask of Fortification",      id:22851, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Fortification","Fortification"]},
-  {item:"Flask of Blinding Light",     id:22861, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Blinding Light","Blinding Light"]},
+  // Flasks (2h, persist through death). The flasks that have a "Shattrath Flask of X" raid
+  // counterpart (bought with Marks of the Illidari; usable only in SSC/TK/Hyjal/BT/Sunwell and
+  // Bind-on-Pickup, so they carry no auction/TSM price) also list that version's buff aura name —
+  // "<effect> of Shattrath" — so those uses are counted toward flask coverage and priced as the
+  // equivalent normal flask. No Shattrath version exists for Chromatic Wonder or Distilled Wisdom.
+  {item:"Flask of Relentless Assault", id:22854, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Relentless Assault","Relentless Assault","Relentless Assault of Shattrath"]}, // Shattrath Flask of Relentless Assault (32901)
+  {item:"Flask of Pure Death",         id:22866, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Pure Death","Pure Death","Pure Death of Shattrath"]}, // Shattrath Flask of Pure Death (35716)
+  {item:"Flask of Mighty Restoration", id:22853, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Mighty Restoration","Mighty Restoration","Mighty Restoration of Shattrath"]}, // Shattrath Flask of Mighty Restoration (32899)
+  {item:"Flask of Fortification",      id:22851, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Fortification","Fortification","Fortification of Shattrath"]}, // Shattrath Flask of Fortification (32898)
+  {item:"Flask of Blinding Light",     id:22861, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Blinding Light","Blinding Light","Blinding Light of Shattrath"]}, // Shattrath Flask of Blinding Light (35717)
   {item:"Flask of Chromatic Wonder",   id:33208, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Chromatic Wonder","Chromatic Wonder"]},
-  {item:"Flask of Supreme Power",      id:13512, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Supreme Power","Supreme Power"]},
+  {item:"Flask of Supreme Power",      id:13512, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Supreme Power","Supreme Power","Supreme Power of Shattrath"]}, // Shattrath Flask of Supreme Power (32900)
   {item:"Flask of Distilled Wisdom",   id:13511, m:"buff", dur:120, persist:true, cat:"flask", names:["Flask of Distilled Wisdom","Distilled Wisdom"]},
   // Battle elixirs (1h)
   {item:"Elixir of Major Agility", cat:"battle",     id:22831, m:"buff", dur:60, names:["Elixir of Major Agility","Major Agility"]},
